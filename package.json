@@ -1,0 +1,24 @@
+{
+  "name": "np-simple-diffable-types",
+  "version": "0.0.0",
+  "description": "simple utility code to define and verify simple nested declarative types",
+  "main": "index.js",
+  "scripts": {
+    "test": "grunt test"
+  },
+  "repository" : { "type" : "git"
+  , "url" : "http://github.com/MarcWeber/simple-diffable-types.git"
+  },
+  "author": "Marc Weber",
+  "license": "ISC",
+  "devDependencies": {
+    "chai": "^1.9.1",
+    "grunt-iced-coffee": "^0.7.0-a",
+    "grunt-mocha-test": "^0.12.0",
+    "iced-coffee-script": "^1.7.1-g",
+    "mocha": "^1.21.4"
+  },
+  "dependencies": {
+    "underscore": "^1.7.0"
+  }
+}
