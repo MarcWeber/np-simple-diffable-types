@@ -16,7 +16,6 @@
   arangodb_scheme_collection = new sdt.type_object_with_known_keys({
     known_keys: {
       indexes: {
-        "default": [],
         type: sdt.type_array_of(new sdt.type_data)
       }
     }
@@ -25,7 +24,6 @@
   arangodb_scheme = new sdt.type_object_with_known_keys({
     known_keys: {
       collections: {
-        "default": [],
         type: new sdt.type_object_with_known_values({
           type: arangodb_scheme_collection
         })
@@ -76,19 +74,13 @@
   });
 
   describe("type_object_with_known_keys", function() {
-    var d1, d2, t_with_default, t_without_default;
-    t_without_default = new sdt.type_object_with_known_keys({
-      known_keys: {
-        key1: {
-          type: new sdt.type_data
-        }
-      }
-    });
+    var d1, d2, t_with_default;
     t_with_default = new sdt.type_object_with_known_keys({
       known_keys: {
         key1: {
-          "default": 0,
-          type: new sdt.type_data
+          type: new sdt.type_data({
+            "default": 0
+          })
         }
       }
     });
@@ -98,13 +90,8 @@
     d2 = {
       key1: 2
     };
-    it("should throw key missing if key1 is not passed", function() {
-      return expect(function() {
-        return t_without_default.fix({});
-      }).to["throw"](/key.*missing/);
-    });
     it("should diff", function() {
-      return expect(t_without_default.diff(d1, d2)).to.deep.eq({
+      return expect(t_with_default.diff(d1, d2)).to.deep.eq({
         key1: {
           left: 1,
           right: 2
@@ -112,7 +99,7 @@
       });
     });
     it("should return eq if values are the same", function() {
-      return expect(t_without_default.diff(d1, d1)).to.deep.eq({
+      return expect(t_with_default.diff(d1, d1)).to.deep.eq({
         key1: {
           eq: 1
         }
@@ -130,7 +117,7 @@
         key1: "abc",
         key2: "to be cleaned"
       };
-      return expect(t_without_default.clean(d3)).to.not.have.deep.property('key2');
+      return expect(t_with_default.clean(d3)).to.not.have.deep.property('key2');
     });
   });
 
@@ -147,7 +134,7 @@
       k2: 2,
       k3: 3
     };
-    return it("should find the differences", function() {
+    it("should find the differences", function() {
       return expect(t.diff(d1, d2)).to.deep.eq({
         both: {
           "k2": {
@@ -159,6 +146,78 @@
         },
         rights: {
           "k3": 3
+        }
+      });
+    });
+    return it("should set defaults", function() {
+      var d, t_with_default;
+      t_with_default = new sdt.type_object_with_known_keys({
+        known_keys: {
+          key: {
+            type: sdt.type_data({
+              "default": 13
+            })
+          }
+        }
+      });
+      t = new sdt.type_object_with_known_values({
+        type: t_with_default
+      });
+      d = {
+        any_key: {}
+      };
+      t.fix(d);
+      return expect(d).to.deep.eq({
+        any_key: {
+          key: 13
+        }
+      });
+    });
+  });
+
+  describe("nested cases", function() {
+    return it("type_object_with_known_keys -> type_array_of should add default empty array as key", function() {
+      var d, db, type_collection, type_collections, type_database, type_index;
+      type_index = function() {
+        return this.fix = function(v) {
+          if (v.type == null) {
+            throw "type missing";
+          }
+        };
+      };
+      type_collection = new sdt.type_object_with_known_keys({
+        known_keys: {
+          indexes: {
+            type: sdt.type_array_of(type_index)
+          }
+        }
+      });
+      d = {};
+      type_collection.fix(d);
+      expect(d).to.deep.eq({
+        indexes: []
+      });
+      type_collections = new sdt.type_object_with_known_values({
+        type: type_collection
+      });
+      type_database = new sdt.type_object_with_known_keys({
+        known_keys: {
+          collections: {
+            type: type_collections
+          }
+        }
+      });
+      db = {
+        collections: {
+          x: {}
+        }
+      };
+      type_database.fix(db);
+      return expect(db).to.deep.eq({
+        collections: {
+          x: {
+            indexes: []
+          }
         }
       });
     });

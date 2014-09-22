@@ -70,6 +70,9 @@
   };
 
   type_data = function(type_options) {
+    this["default"] = function() {
+      return type_options["default"];
+    };
     this.fix = function(v) {};
     this.diff_eq = _.isEqual;
     this.diff = diff_deep;
@@ -80,6 +83,9 @@
   };
 
   type_array_of = function(type) {
+    this["default"] = function() {
+      return [];
+    };
     this.fix = function(v) {};
     this.diff = function(a, b) {
       return diff_array(a, b, type.diff_eq);
@@ -93,20 +99,22 @@
   type_object_with_known_keys = function(type_options) {
     var known_keys;
     known_keys = type_options.known_keys;
+    this["default"] = function() {
+      return {};
+    };
     this.fix = function(v) {
-      var k, key_opts;
+      var default_, k, key_opts, value_type;
       for (k in known_keys) {
         key_opts = known_keys[k];
+        value_type = known_keys[k].type;
         if (v[k] == null) {
-          if (key_opts["default"] != null) {
-            v[k] = key_opts["default"];
-          } else {
+          default_ = value_type["default"]();
+          v[k] = default_;
+          if (default_ == null) {
             throw "key " + k + " missing ";
           }
         }
-        if (v[k] != null) {
-          known_keys[k].type.fix(v[k]);
-        }
+        value_type.fix(v[k]);
       }
       if (typeof type_options === "function" ? type_options(fix) : void 0) {
         return type_options.fix(v);
@@ -135,12 +143,15 @@
   };
 
   type_object_with_known_values = function(type_options) {
+    this["default"] = function() {
+      return {};
+    };
     this.fix = function(v) {
-      var k, _i, _len, _results;
+      var k, _results;
       _results = [];
-      for (v = _i = 0, _len = v.length; _i < _len; v = ++_i) {
-        k = v[v];
-        _results.push(type_options.type.type_.fix(v));
+      for (k in v) {
+        v = v[k];
+        _results.push(type_options.type.fix(v));
       }
       return _results;
     };

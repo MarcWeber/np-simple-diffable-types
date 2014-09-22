@@ -9,13 +9,11 @@ sdt = require('simple-diffable-types')
 arangodb_scheme_collection = new sdt.type_object_with_known_keys
   known_keys:
     indexes:
-      default: []
       type: sdt.type_array_of new sdt.type_data
 
 arangodb_scheme = new sdt.type_object_with_known_keys
   known_keys:
     collections:
-      default: []
       type: new sdt.type_object_with_known_values(
         type: arangodb_scheme_collection
       )
@@ -51,16 +49,10 @@ describe "diff_array", ->
 
 describe "type_object_with_known_keys", ->
 
-  t_without_default = new sdt.type_object_with_known_keys(
-    known_keys:
-      key1:
-        type: new sdt.type_data
-  )
   t_with_default = new sdt.type_object_with_known_keys(
     known_keys:
       key1:
-        default: 0
-        type: new sdt.type_data
+        type: new sdt.type_data(default: 0)
   )
 
   d1 =
@@ -68,15 +60,11 @@ describe "type_object_with_known_keys", ->
   d2 =
     key1: 2
 
-  it "should throw key missing if key1 is not passed", ->
-    expect(-> t_without_default.fix {}).to.throw(/key.*missing/)
-
   it "should diff", ->
-    expect(t_without_default.diff(d1, d2)).to.deep.eq({ key1: { left: 1, right: 2 } })
+    expect(t_with_default.diff(d1, d2)).to.deep.eq({ key1: { left: 1, right: 2 } })
 
   it "should return eq if values are the same", ->
-    expect(t_without_default.diff(d1, d1)).to.deep.eq({ key1: { eq: 1 }})
-
+    expect(t_with_default.diff(d1, d1)).to.deep.eq({ key1: { eq: 1 }})
 
   it "t_with_default sets key1 to default value", ->
     d_bad = {}
@@ -89,7 +77,7 @@ describe "type_object_with_known_keys", ->
       key1: "abc"
       key2: "to be cleaned"
 
-    expect(t_without_default.clean(d3)).to.not.have.deep.property('key2')
+    expect(t_with_default.clean(d3)).to.not.have.deep.property('key2')
 
 # testing type_object_with_known_keys
 describe "type_object_with_known_values", ->
@@ -111,6 +99,47 @@ describe "type_object_with_known_values", ->
         lefts: { "k1": 1 }
         rights: { "k3": 3 }
     )
+
+  it "should set defaults", ->
+    t_with_default = new sdt.type_object_with_known_keys
+      known_keys:
+        key:
+          type: sdt.type_data(default: 13)
+
+    t = new sdt.type_object_with_known_values(type: t_with_default)
+    d = any_key: {}
+    t.fix(d)
+    expect(d).to.deep.eq(any_key: key: 13)
+
+describe "nested cases", ->
+  it "type_object_with_known_keys -> type_array_of should add default empty array as key", ->
+    type_index = ->
+      this.fix = (v) ->
+        throw "type missing" unless v.type?
+
+    type_collection = new sdt.type_object_with_known_keys
+      known_keys:
+        indexes:
+          type: sdt.type_array_of type_index
+
+    d = {}
+    type_collection.fix(d)
+    expect(d).to.deep.eq(indexes: [])
+
+    type_collections = new sdt.type_object_with_known_values(
+      type: type_collection
+    )
+
+    type_database = new sdt.type_object_with_known_keys
+      known_keys:
+        collections:
+          type: type_collections
+
+    db =
+      collections:
+        x: {}
+    type_database.fix(db)
+    expect(db).to.deep.eq(collections: x: indexes: [])
 
 # describe "test that tests get run", ->
 #   it "should fail", ->
