@@ -46,7 +46,7 @@ diff_deep = (a,b) ->
 
 type_data = (type_options) ->
   this.default = -> type_options.default
-  this.fix = (v) ->
+  this.fix = (v) -> undefined
   this.diff_eq = _.isEqual
   this.diff = diff_deep
   this.clean = (v) -> v
@@ -54,7 +54,7 @@ type_data = (type_options) ->
 
 type_array_of = (type) ->
   this.default = -> []
-  this.fix = (v) ->
+  this.fix = (v) -> undefined
   this.diff = (a,b) -> diff_array(a, b, type.diff_eq)
   this.clean = (v) -> _.map(v, type.clean)
   this
@@ -65,7 +65,7 @@ type_object_with_known_keys = (type_options) ->
   this.default = -> {}
   # checks and fixes
   this.fix = (v) ->
-    for k,key_opts of known_keys
+    for k, key_opts of known_keys
       value_type = known_keys[k].type
       if (!v[k]?)
         default_ = value_type.default()
@@ -73,6 +73,7 @@ type_object_with_known_keys = (type_options) ->
         throw "key " + k + " missing " unless default_?
       value_type.fix(v[k])
     type_options.fix(v) if type_options?fix
+    undefined
 
   this.diff = (a, b) ->
     known_keys = type_options.known_keys
@@ -92,8 +93,9 @@ type_object_with_known_keys = (type_options) ->
 type_object_with_known_values = (type_options) ->
   this.default = -> {}
   this.fix = (v) ->
-    for k, v of v
-      type_options.type.fix(v)
+    for k, val of v
+      type_options.type.fix(val)
+    undefined
 
   this.diff = (a,b) ->
     d = diff_array(_.keys(a), _.keys(b), (a,b) -> a == b)

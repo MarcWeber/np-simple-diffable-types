@@ -73,7 +73,9 @@
     this["default"] = function() {
       return type_options["default"];
     };
-    this.fix = function(v) {};
+    this.fix = function(v) {
+      return void 0;
+    };
     this.diff_eq = _.isEqual;
     this.diff = diff_deep;
     this.clean = function(v) {
@@ -86,7 +88,9 @@
     this["default"] = function() {
       return [];
     };
-    this.fix = function(v) {};
+    this.fix = function(v) {
+      return void 0;
+    };
     this.diff = function(a, b) {
       return diff_array(a, b, type.diff_eq);
     };
@@ -117,8 +121,9 @@
         value_type.fix(v[k]);
       }
       if (typeof type_options === "function" ? type_options(fix) : void 0) {
-        return type_options.fix(v);
+        type_options.fix(v);
       }
+      return void 0;
     };
     this.diff = function(a, b) {
       var k, r;
@@ -147,13 +152,12 @@
       return {};
     };
     this.fix = function(v) {
-      var k, _results;
-      _results = [];
+      var k, val;
       for (k in v) {
-        v = v[k];
-        _results.push(type_options.type.fix(v));
+        val = v[k];
+        type_options.type.fix(val);
       }
-      return _results;
+      return void 0;
     };
     this.diff = function(a, b) {
       var d, n, r, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
